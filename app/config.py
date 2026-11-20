@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     phishtank_api_key: str = ""
     urlscan_api_key: str = ""
     app_token: str = ""
+    admin_token: str = ""
     database_url: str = "sqlite+aiosqlite:///./safelink.db"
     redis_url: str = ""
     rules_signing_key_b64: str = ""

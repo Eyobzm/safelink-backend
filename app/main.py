@@ -5,7 +5,7 @@ import httpx
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 
-from .api import report, rules, scan
+from .api import admin, report, rules, scan
 from .config import settings
 from .db.session import init_db
 from .logging_filter import RedactQueryFilter
@@ -26,7 +26,8 @@ async def lifespan(app: FastAPI):
     await init_db()
     client = httpx.AsyncClient()  # one shared client (connection pooling)
     app.state.settings = settings
-    app.state.cache = VerdictCache()
+    app.state.cache = VerdictCache(settings.redis_url)
+    await app.state.cache.connect()
     app.state.urlscan = URLScanProvider(client, settings.urlscan_api_key)
     app.state.providers = [
         GSBProvider(client, settings.gsb_api_key),
@@ -36,6 +37,7 @@ async def lifespan(app: FastAPI):
     ]
     app.state.redirects = RedirectResolver(client)
     yield
+    await app.state.cache.aclose()
     await client.aclose()
 
 
@@ -43,6 +45,7 @@ app = FastAPI(title="SafeLink Backend", version="0.1.0", lifespan=lifespan)
 app.include_router(scan.router)
 app.include_router(report.router)
 app.include_router(rules.router)
+app.include_router(admin.router)
 
 
 @app.get("/health")

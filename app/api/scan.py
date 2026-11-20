@@ -2,6 +2,8 @@ import asyncio
 
 from fastapi import APIRouter, Depends, Request
 
+from ..db.models import ScanEnrichment
+from ..db.session import SessionLocal
 from ..models import ScanRequest, ScanResponse
 from ..normalize import normalize_url, outbound_url, url_hash
 from ..pipeline import run_scan
@@ -17,7 +19,7 @@ async def scan(req: ScanRequest, request: Request, _: str = Depends(require_clie
     normalized = normalize_url(req.url)
     key = url_hash(normalized)
 
-    cached = st.cache.get(key)
+    cached = await st.cache.get(key)
     if cached:
         return cached
 
@@ -49,12 +51,17 @@ async def scan(req: ScanRequest, request: Request, _: str = Depends(require_clie
         degraded=decision.degraded,
         latency_ms=data["latency_ms"],
     )
-    st.cache.set(key, resp.model_dump(), decision.verdict, decision.degraded)
+    await st.cache.set(key, resp.model_dump(), decision.verdict, decision.degraded)
     return resp
 
 
 async def _safe_submit(urlscan, url: str) -> None:
     try:
-        await urlscan.submit(url)
+        uuid = await urlscan.submit(url)
+        if not uuid:
+            return
+        async with SessionLocal() as s:
+            await s.merge(ScanEnrichment(url_hash=url_hash(url), urlscan_uuid=uuid))
+            await s.commit()
     except Exception:
         pass  # enrichment is best-effort

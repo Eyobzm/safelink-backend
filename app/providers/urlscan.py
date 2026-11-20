@@ -21,9 +21,13 @@ class URLScanProvider:
             raise RuntimeError("URLScan submission must be private")
         return await self._client.post(self.URL, headers={"API-Key": self._key}, json=payload, timeout=5)
 
-    async def submit(self, url: str) -> None:
-        """Run as a background task, outside the verdict deadline."""
-        await self._post(self.build_payload(url))
+    async def submit(self, url: str) -> str | None:
+        """Private submission outside the verdict deadline. Returns the scan UUID."""
+        if not self._key:
+            return None
+        resp = await self._post(self.build_payload(url))
+        resp.raise_for_status()
+        return resp.json().get("uuid")
 
     async def lookup(self, url: str) -> EngineResult:
         # First-pass verdict does not wait for URLScan (SRS 13.2 #4).

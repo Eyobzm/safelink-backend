@@ -10,3 +10,6 @@ SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSe
 async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)  # pilot only; use Alembic later
+    from ..services.rules_service import ensure_seed
+
+    await ensure_seed()

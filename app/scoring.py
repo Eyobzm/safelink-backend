@@ -59,12 +59,17 @@ def decide(s: ScanInput) -> Decision:
 
 
 MESSAGE_KEYS = {
+    "IMP_DELETE_PATH": "msg_dangerous_delete",
+    "IMP_DEVICE_LINK": "msg_dangerous_hijack",
+    "IMP_OAUTH_REDIRECT": "msg_dangerous_hijack",
     "TI_GSB": "msg_dangerous_hijack",
     "TI_PT_VERIFIED": "msg_dangerous_hijack",
     "TI_VT": "msg_suspicious_lookalike",
     "NET_REDIRECT_CHAIN": "msg_suspicious_redirect",
     "DOM_LOOKALIKE": "msg_suspicious_lookalike",
     "TI_PT_UNVERIFIED": "msg_suspicious_lookalike",
+    "DOM_LOW_TRUST_TLD": "msg_suspicious_tld",
+    "NET_NO_TLS": "msg_suspicious_notls",
 }
 
 

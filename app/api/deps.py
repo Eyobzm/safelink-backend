@@ -27,3 +27,12 @@ async def require_client(
         raise HTTPException(status_code=429, detail={"error": "rate_limited"})
     q.append(now)
     return client
+
+
+async def require_admin(cred: HTTPAuthorizationCredentials | None = Depends(_bearer)) -> str:
+    """Separate token so the phone app cannot triage reports."""
+    if not settings.admin_token:
+        raise HTTPException(status_code=503, detail={"error": "admin_disabled"})
+    if not cred or not hmac.compare_digest(cred.credentials, settings.admin_token):
+        raise HTTPException(status_code=401, detail={"error": "unauthorized"})
+    return "admin"
